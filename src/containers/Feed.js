@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import styled from "styled-components";
+import queryString from "query-string";
 import { Link } from "react-router-dom";
 import Card from "../components/Card/Card";
 
@@ -19,22 +20,41 @@ const CardLink = styled(Link)`
   color: inherit;
 `;
 
+const PaginationBar = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: space-betweeen;
+`;
+
+const PagingationLink = styled(Link)`
+  padding: 1%;
+  background: lightBlue;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+`;
+
 const ROOT_API = "https://api.stackexchange.com/2.2/";
 
 class Feed extends Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
+    const query = queryString.parse(props.location.search);
     this.state = {
       data: [],
+      page: query.page ? parseInt(query.page) : 1,
       loading: true,
       error: "",
     };
   }
 
   async componentDidMount() {
+    const { page } = this.state;
     try {
       const data = await fetch(
-        `${ROOT_API}questions?order=desc&sort=activity&tagged=reactjs&site=stackoverflow`
+        `${ROOT_API}questions?order=desc&sort=activity&tagged=reactjs&site=stackoverflow${
+          page ? `&page=${page}` : ""
+        }`
       );
       const dataJSON = await data.json();
 
@@ -53,7 +73,8 @@ class Feed extends Component {
   }
 
   render() {
-    const { data, loading, error } = this.state;
+    const { data, page, loading, error } = this.state;
+    const { match } = this.props;
 
     if (loading || error) {
       return <Alert>{loading ? "Loading..." : error}</Alert>;
@@ -69,6 +90,13 @@ class Feed extends Component {
             <Card data={item} />
           </CardLink>
         ))}
+        <PaginationBar>
+          {page > 1 && (
+            <PagingationLink to={`${match.url}?page=${page - 1}`}>
+              Previous
+            </PagingationLink>
+          )}
+        </PaginationBar>
       </FeedWrapper>
     );
   }
